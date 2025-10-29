@@ -74,5 +74,29 @@ public class PostService : IPostService
     {
         return await _context.Posts.AnyAsync(p => p.Id == id);
     }
+
+    public async Task<(IEnumerable<Post> items, int totalCount)> GetPagedPostsAsync(string? search, int page, int pageSize)
+    {
+        var query = _context.Posts
+            .Include(p => p.Author)
+            .Include(p => p.Comments)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(p => p.Title.Contains(term) || p.Content.Contains(term));
+        }
+
+        var total = await query.CountAsync();
+
+        var items = await query
+            .OrderByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, total);
+    }
 }
 

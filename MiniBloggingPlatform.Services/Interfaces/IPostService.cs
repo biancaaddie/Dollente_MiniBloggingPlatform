@@ -11,5 +11,7 @@ public interface IPostService
     Task UpdatePostAsync(Post post);
     Task DeletePostAsync(int id);
     Task<bool> PostExistsAsync(int id);
+
+    Task<(IEnumerable<Post> items, int totalCount)> GetPagedPostsAsync(string? search, int page, int pageSize);
 }
 

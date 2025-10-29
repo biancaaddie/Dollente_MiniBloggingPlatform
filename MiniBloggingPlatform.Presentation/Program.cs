@@ -21,14 +21,6 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.Password.RequireNonAlphanumeric = true;
     options.Password.RequireUppercase = true;
     options.Password.RequireLowercase = true;
-    options.Password.RequireDigit = true;
-    
-    // Custom password requirements validation
-    options.Password.RequireDigit = true;
-    options.Password.RequireNonAlphanumeric = true;
-    options.Password.RequireUppercase = true;
-    
-    // User settings
     options.User.RequireUniqueEmail = true;
     options.SignIn.RequireConfirmedAccount = false;
 })
@@ -47,6 +39,17 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
+
+// Seed initial data
+using (var scope = app.Services.CreateScope())
+{
+	var services = scope.ServiceProvider;
+	DbSeeder.SeedAsync(
+		services.GetRequiredService<ApplicationDbContext>(),
+		services.GetRequiredService<UserManager<ApplicationUser>>(),
+		services.GetRequiredService<RoleManager<IdentityRole>>()
+	).GetAwaiter().GetResult();
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

@@ -1,66 +1,85 @@
-@model IEnumerable<PostViewModel>
+@model PostsIndexViewModel
 
 @{
     ViewData["Title"] = "All Posts";
 }
 
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>All Posts</h2>
+<div class="container py-3">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+        <h2 class="m-0">All Posts</h2>
+        <form method="get" class="d-flex" role="search">
+            <input type="text" name="search" class="form-control me-2" placeholder="Search posts..." value="@Model.Search" />
+            <button type="submit" class="btn btn-outline-primary">Search</button>
+        </form>
         @if (User.Identity?.IsAuthenticated == true)
         {
             <a asp-action="Create" class="btn btn-primary">Create New Post</a>
         }
     </div>
 
-    @if (!Model.Any())
+    @if (Model.Posts == null || !Model.Posts.Any())
     {
         <div class="alert alert-info">
-            <h4>No posts yet!</h4>
-            <p>Be the first to create a post.</p>
-            @if (User.Identity?.IsAuthenticated == true)
-            {
-                <a asp-action="Create" class="btn btn-primary btn-sm">Create Post</a>
-            }
-            else
-            {
-                <p>Please <a asp-controller="Account" asp-action="Login">login</a> or <a asp-controller="Account" asp-action="Register">register</a> to create posts.</p>
-            }
+            <h5 class="mb-1">No posts found</h5>
+            <p class="mb-0">Try adjusting your search or create the first post.</p>
         </div>
     }
     else
     {
-        @foreach (var post in Model)
-        {
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        <a asp-action="Details" asp-route-id="@post.Id" class="text-decoration-none">@post.Title</a>
-                    </h5>
-                    <p class="card-text">
-                        @if (post.Content.Length > 150)
-                        {
-                            @post.Content.Substring(0, 150)
-                            <text>...</text>
-                        }
-                        else
-                        {
-                            @post.Content
-                        }
-                    </p>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <small class="text-muted">
-                            By <strong>@post.AuthorName</strong> on @post.CreatedAt.ToString("MMM dd, yyyy HH:mm")
-                            @if (post.UpdatedAt.HasValue)
-                            {
-                                <span class="text-muted">(Updated: @post.UpdatedAt.Value.ToString("MMM dd, yyyy HH:mm"))</span>
-                            }
-                        </small>
-                        <span class="badge bg-secondary">@post.CommentCount Comments</span>
+        <div class="row g-3">
+            @foreach (var post in Model.Posts)
+            {
+                <div class="col-12">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-body">
+                            <h5 class="card-title mb-2">
+                                <a asp-action="Details" asp-route-id="@post.Id" class="text-decoration-none">@post.Title</a>
+                            </h5>
+                            <p class="card-text text-secondary">
+                                @if (post.Content.Length > 180)
+                                {
+                                    @post.Content.Substring(0, 180)
+                                    <text>...</text>
+                                }
+                                else
+                                {
+                                    @post.Content
+                                }
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    By <strong>@post.AuthorName</strong> on @post.CreatedAt.ToString("MMM dd, yyyy HH:mm")
+                                    @if (post.UpdatedAt.HasValue)
+                                    {
+                                        <span class="text-muted"> (Updated: @post.UpdatedAt.Value.ToString("MMM dd, yyyy HH:mm"))</span>
+                                    }
+                                </small>
+                                <span class="badge bg-secondary">@post.CommentCount Comments</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        }
+            }
+        </div>
+
+        <nav class="mt-4" aria-label="Posts pagination">
+            <ul class="pagination justify-content-center">
+                @{ var prevDisabled = Model.Page <= 1 ? " disabled" : string.Empty; var nextDisabled = Model.Page >= Model.TotalPages ? " disabled" : string.Empty; }
+                <li class="page-item@prevDisabled">
+                    <a class="page-link" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@(Model.Page - 1)" asp-route-pageSize="@Model.PageSize">Previous</a>
+                </li>
+                @for (var i = 1; i <= Model.TotalPages; i++)
+                {
+                    var active = i == Model.Page ? " active" : string.Empty;
+                    <li class="page-item@active">
+                        <a class="page-link" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@i" asp-route-pageSize="@Model.PageSize">@i</a>
+                    </li>
+                }
+                <li class="page-item@nextDisabled">
+                    <a class="page-link" asp-action="Index" asp-route-search="@Model.Search" asp-route-page="@(Model.Page + 1)" asp-route-pageSize="@Model.PageSize">Next</a>
+                </li>
+            </ul>
+        </nav>
     }
 </div>
 

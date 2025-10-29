@@ -23,10 +23,11 @@ public class PostController : Controller
 
     [AllowAnonymous]
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? search, int page = 1, int pageSize = 5)
     {
-        var posts = await _postService.GetAllPostsAsync();
-        var postsViewModels = posts.Select(p => new PostViewModel
+        var (items, totalCount) = await _postService.GetPagedPostsAsync(search, page, pageSize);
+
+        var postsViewModels = items.Select(p => new PostViewModel
         {
             Id = p.Id,
             Title = p.Title,
@@ -38,7 +39,16 @@ public class PostController : Controller
             CommentCount = p.Comments?.Count ?? 0
         }).ToList();
 
-        return View(postsViewModels);
+        var model = new PostsIndexViewModel
+        {
+            Search = search ?? string.Empty,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            Posts = postsViewModels
+        };
+
+        return View(model);
     }
 
     [HttpGet]
