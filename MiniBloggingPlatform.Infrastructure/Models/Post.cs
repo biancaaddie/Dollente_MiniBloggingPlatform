@@ -13,6 +13,8 @@ public class Post
     [Required]
     public string Content { get; set; } = string.Empty;
     
+    public string? ImageUrl { get; set; }
+    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     
@@ -23,5 +25,6 @@ public class Post
     // Navigation property
     public virtual ApplicationUser? Author { get; set; }
     public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
+    public virtual ICollection<PostTag> PostTags { get; set; } = new List<PostTag>();
 }
 

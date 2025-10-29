@@ -18,9 +18,13 @@ public class Comment
     
     [Required]
     public string AuthorId { get; set; } = string.Empty;
+
+    public int? ParentCommentId { get; set; }
     
     // Navigation properties
     public virtual Post? Post { get; set; }
     public virtual ApplicationUser? Author { get; set; }
+    public virtual Comment? ParentComment { get; set; }
+    public virtual ICollection<Comment> Replies { get; set; } = new List<Comment>();
 }
 
