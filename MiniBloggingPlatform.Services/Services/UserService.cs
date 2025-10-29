@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using MiniBloggingPlatform.Infrastructure.Data;
 using MiniBloggingPlatform.Infrastructure.Models;
 using MiniBloggingPlatform.Services.Interfaces;

@@ -5,7 +5,7 @@ namespace MiniBloggingPlatform.Presentation;
 
 public class CustomPasswordValidator : IPasswordValidator<ApplicationUser>
 {
-    public Task<IdentityResult> ValidateAsync(UserManager<ApplicationUser> manager, ApplicationUser user, string password)
+    public Task<IdentityResult> ValidateAsync(UserManager<ApplicationUser> manager, ApplicationUser user, string? password)
     {
         var errors = new List<IdentityError>();
 

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MiniBloggingPlatform.Infrastructure.Models;
+using MiniBloggingPlatform.Presentation.Models;
 
 namespace MiniBloggingPlatform.Presentation.Controllers;
 

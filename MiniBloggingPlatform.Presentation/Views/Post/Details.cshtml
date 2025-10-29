@@ -43,7 +43,7 @@
 
         <hr />
 
-        <h4>Comments (@comments.Count)</h4>
+        <h4>Comments (@(comments?.Count ?? 0))</h4>
 
         @if (User.Identity?.IsAuthenticated == true)
         {

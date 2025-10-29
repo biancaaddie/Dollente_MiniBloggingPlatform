@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MiniBloggingPlatform.Infrastructure.Data;
 using MiniBloggingPlatform.Infrastructure.Models;
+using MiniBloggingPlatform.Presentation;
 using MiniBloggingPlatform.Services.Interfaces;
 using MiniBloggingPlatform.Services.Services;
 
