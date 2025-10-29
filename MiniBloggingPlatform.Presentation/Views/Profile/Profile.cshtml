@@ -1,0 +1,25 @@
+@model MiniBloggingPlatform.Infrastructure.Models.ApplicationUser
+
+@{
+    ViewData["Title"] = "Profile";
+}
+
+<div class="container py-3">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body d-flex gap-3 align-items-start">
+            <img src="@(string.IsNullOrWhiteSpace(Model.ProfileImageUrl) ? "/favicon.ico" : Model.ProfileImageUrl)" class="rounded" style="width:96px;height:96px;object-fit:cover;" alt="Profile" />
+            <div class="flex-grow-1">
+                <h4 class="mb-1">@Model.FirstName @Model.LastName</h4>
+                <div class="text-muted mb-2">@Model.Email</div>
+                @if (!string.IsNullOrWhiteSpace(Model.Bio))
+                {
+                    <p>@Model.Bio</p>
+                }
+                @if (User?.Identity?.IsAuthenticated == true && User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value == Model.Id)
+                {
+                    <a asp-action="Edit" class="btn btn-sm btn-outline-primary">Edit Profile</a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

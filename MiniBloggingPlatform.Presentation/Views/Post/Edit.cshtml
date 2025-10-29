@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Edit Post";
     var postId = ViewBag.PostId;
+    var existingImage = ViewBag.ExistingImage as string;
 }
 
 <h2>Edit Post</h2>
@@ -10,7 +11,7 @@
 
 <div class="row">
     <div class="col-md-8">
-        <form asp-action="Edit" asp-route-id="@postId" method="post">
+        <form asp-action="Edit" asp-route-id="@postId" method="post" enctype="multipart/form-data">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <div class="mb-3">
@@ -23,6 +24,24 @@
                 <label asp-for="Content" class="form-label"></label>
                 <textarea asp-for="Content" class="form-control" rows="10"></textarea>
                 <span asp-validation-for="Content" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Tags" class="form-label"></label>
+                <input asp-for="Tags" class="form-control" />
+                <span asp-validation-for="Tags" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Image" class="form-label"></label>
+                <input asp-for="Image" type="file" class="form-control" accept="image/*" />
+                <span asp-validation-for="Image" class="text-danger"></span>
+                @if (!string.IsNullOrWhiteSpace(existingImage))
+                {
+                    <div class="mt-2">
+                        <img src="@existingImage" alt="Post image" class="img-fluid rounded" style="max-height: 180px;" />
+                    </div>
+                }
             </div>
 
             <div class="mb-3">

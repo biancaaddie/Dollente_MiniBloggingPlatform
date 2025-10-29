@@ -13,12 +13,14 @@ public class PostController : Controller
     private readonly IPostService _postService;
     private readonly ICommentService _commentService;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IWebHostEnvironment _env;
 
-    public PostController(IPostService postService, ICommentService commentService, UserManager<ApplicationUser> userManager)
+    public PostController(IPostService postService, ICommentService commentService, UserManager<ApplicationUser> userManager, IWebHostEnvironment env)
     {
         _postService = postService;
         _commentService = commentService;
         _userManager = userManager;
+        _env = env;
     }
 
     [AllowAnonymous]
@@ -48,6 +50,7 @@ public class PostController : Controller
             Posts = postsViewModels
         };
 
+        ViewBag.AllTags = await _postService.GetAllTagNamesAsync();
         return View(model);
     }
 
@@ -74,7 +77,25 @@ public class PostController : Controller
                     CreatedAt = DateTime.UtcNow
                 };
 
-                await _postService.CreatePostAsync(post);
+                // image upload
+                if (model.Image != null && model.Image.Length > 0)
+                {
+                    var uploadsDir = Path.Combine(_env.WebRootPath, "uploads");
+                    Directory.CreateDirectory(uploadsDir);
+                    var fileName = $"{Guid.NewGuid()}_{Path.GetFileName(model.Image.FileName)}";
+                    var filePath = Path.Combine(uploadsDir, fileName);
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await model.Image.CopyToAsync(stream);
+                    }
+                    post.ImageUrl = $"/uploads/{fileName}";
+                }
+
+                var tagNames = string.IsNullOrWhiteSpace(model.Tags)
+                    ? Array.Empty<string>()
+                    : model.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                await _postService.CreatePostAsync(post, tagNames);
                 return RedirectToAction("Index");
             }
         }
@@ -104,7 +125,7 @@ public class PostController : Controller
             CommentCount = post.Comments?.Count ?? 0
         };
 
-        var comments = post.Comments?.Select(c => new CommentViewModel
+        var comments = post.Comments?.Where(c => c.ParentCommentId == null).Select(c => new CommentViewModel
         {
             Id = c.Id,
             Content = c.Content,
@@ -117,6 +138,8 @@ public class PostController : Controller
 
         ViewBag.Post = postViewModel;
         ViewBag.Comments = comments;
+        ViewBag.PostImageUrl = post.ImageUrl;
+        ViewBag.Tags = post.PostTags.Select(pt => pt.Tag!.Name).ToList();
 
         return View();
     }
@@ -140,10 +163,12 @@ public class PostController : Controller
         var model = new CreatePostViewModel
         {
             Title = post.Title,
-            Content = post.Content
+            Content = post.Content,
+            Tags = string.Join(", ", post.PostTags.Select(pt => pt.Tag!.Name))
         };
 
         ViewBag.PostId = id;
+        ViewBag.ExistingImage = post.ImageUrl;
         return View(model);
     }
 
@@ -170,7 +195,24 @@ public class PostController : Controller
             post.Content = model.Content;
             post.UpdatedAt = DateTime.UtcNow;
 
-            await _postService.UpdatePostAsync(post);
+            if (model.Image != null && model.Image.Length > 0)
+            {
+                var uploadsDir = Path.Combine(_env.WebRootPath, "uploads");
+                Directory.CreateDirectory(uploadsDir);
+                var fileName = $"{Guid.NewGuid()}_{Path.GetFileName(model.Image.FileName)}";
+                var filePath = Path.Combine(uploadsDir, fileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await model.Image.CopyToAsync(stream);
+                }
+                post.ImageUrl = $"/uploads/{fileName}";
+            }
+
+            var tagNames = string.IsNullOrWhiteSpace(model.Tags)
+                ? Array.Empty<string>()
+                : model.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            await _postService.UpdatePostAsync(post, tagNames);
             return RedirectToAction("Details", new { id });
         }
 
@@ -201,7 +243,7 @@ public class PostController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AddComment(int postId, string content)
+    public async Task<IActionResult> AddComment(int postId, string content, int? parentCommentId)
     {
         if (string.IsNullOrWhiteSpace(content))
         {
@@ -228,7 +270,14 @@ public class PostController : Controller
             CreatedAt = DateTime.UtcNow
         };
 
-        await _commentService.CreateCommentAsync(comment);
+        if (parentCommentId.HasValue)
+        {
+            await _commentService.ReplyToCommentAsync(parentCommentId.Value, comment);
+        }
+        else
+        {
+            await _commentService.CreateCommentAsync(comment);
+        }
 
         return Json(new { success = true, message = "Comment added successfully." });
     }

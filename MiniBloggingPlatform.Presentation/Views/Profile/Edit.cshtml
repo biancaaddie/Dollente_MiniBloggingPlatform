@@ -1,0 +1,36 @@
+@model MiniBloggingPlatform.Infrastructure.Models.ApplicationUser
+
+@{
+    ViewData["Title"] = "Edit Profile";
+}
+
+<div class="container py-3">
+    <h3>Edit Profile</h3>
+    <hr />
+    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label class="form-label">First Name</label>
+            <input name="firstName" class="form-control" value="@Model.FirstName" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Last Name</label>
+            <input name="lastName" class="form-control" value="@Model.LastName" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Bio</label>
+            <textarea name="bio" class="form-control" rows="4">@Model.Bio</textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Profile Picture</label>
+            <input name="profileImage" type="file" accept="image/*" class="form-control" />
+            @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
+            {
+                <div class="mt-2">
+                    <img src="@Model.ProfileImageUrl" class="img-fluid rounded" style="max-height: 160px;" />
+                </div>
+            }
+        </div>
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a asp-action="ViewProfile" asp-route-id="@Model.Id" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

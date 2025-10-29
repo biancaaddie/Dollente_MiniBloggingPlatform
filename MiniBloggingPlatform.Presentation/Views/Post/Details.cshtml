@@ -1,6 +1,8 @@
 @{
     var post = ViewBag.Post as PostViewModel;
     var comments = ViewBag.Comments as List<CommentViewModel>;
+    var postImageUrl = ViewBag.PostImageUrl as string;
+    var tags = ViewBag.Tags as List<string> ?? new List<string>();
 }
 
 @{
@@ -14,14 +16,26 @@
             <div class="card-body">
                 <h3 class="card-title">@post.Title</h3>
                 <p class="text-muted">
-                    By <strong>@post.AuthorName</strong> on @post.CreatedAt.ToString("MMM dd, yyyy 'at' HH:mm")
+                    By <strong><a class="text-decoration-none" asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@post.AuthorId">@post.AuthorName</a></strong> on @post.CreatedAt.ToString("MMM dd, yyyy 'at' HH:mm")
                     @if (post.UpdatedAt.HasValue)
                     {
                         <span class="text-muted">(Updated: @post.UpdatedAt.Value.ToString("MMM dd, yyyy 'at' HH:mm"))</span>
                     }
                 </p>
-                <hr />
+                @if (!string.IsNullOrWhiteSpace(postImageUrl))
+                {
+                    <img src="@postImageUrl" class="img-fluid rounded mb-3" alt="Post image" />
+                }
                 <p class="card-text" style="white-space: pre-wrap;">@post.Content</p>
+                @if (tags.Any())
+                {
+                    <div class="mt-2">
+                        @foreach (var t in tags)
+                        {
+                            <span class="badge bg-light text-dark border me-1">@t</span>
+                        }
+                    </div>
+                }
                 
                 @if (User.Identity?.IsAuthenticated == true)
                 {
@@ -70,16 +84,29 @@
                         <div class="card-body">
                             <p class="card-text">@comment.Content</p>
                             <small class="text-muted">
-                                By <strong>@comment.AuthorName</strong> on @comment.CreatedAt.ToString("MMM dd, yyyy 'at' HH:mm")
+                                By <strong><a class="text-decoration-none" asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@comment.AuthorId">@comment.AuthorName</a></strong> on @comment.CreatedAt.ToString("MMM dd, yyyy 'at' HH:mm")
                             </small>
-                            @if (User.Identity?.IsAuthenticated == true)
-                            {
-                                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                                @if (userId == comment.AuthorId)
+                            <div class="mt-2">
+                                @if (User.Identity?.IsAuthenticated == true)
                                 {
-                                    <button class="btn btn-sm btn-danger float-end delete-comment" data-comment-id="@comment.Id">Delete</button>
+                                    <button class="btn btn-sm btn-outline-secondary me-2 reply-comment" data-parent-id="@comment.Id">Reply</button>
+                                    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                                    if (userId == comment.AuthorId)
+                                    {
+                                        <button class="btn btn-sm btn-danger delete-comment" data-comment-id="@comment.Id">Delete</button>
+                                    }
                                 }
-                            }
+                            </div>
+                            <div class="reply-form mt-2" data-parent-id="@comment.Id" style="display:none;">
+                                <form class="replyForm">
+                                    <input type="hidden" name="postId" value="@post.Id" />
+                                    <input type="hidden" name="parentCommentId" value="@comment.Id" />
+                                    <div class="mb-2">
+                                        <textarea name="content" class="form-control" rows="2" placeholder="Write a reply..." required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-primary">Reply</button>
+                                </form>
+                            </div>
                         </div>
                     </div>
                 }
@@ -96,11 +123,9 @@
     <script>
         document.getElementById('commentForm')?.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
             const formData = new FormData(this);
             const content = formData.get('content');
             const postId = formData.get('postId');
-            
             const response = await fetch('@Url.Action("AddComment")', {
                 method: 'POST',
                 headers: {
@@ -109,21 +134,42 @@
                 },
                 body: `postId=${postId}&content=${encodeURIComponent(content)}&__RequestVerificationToken=${document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''}`
             });
-            
             const result = await response.json();
-            
-            if (result.success) {
-                location.reload();
-            } else {
-                alert(result.message);
-            }
+            if (result.success) { location.reload(); } else { alert(result.message); }
+        });
+
+        document.querySelectorAll('.reply-comment').forEach(button => {
+            button.addEventListener('click', function() {
+                const parentId = this.getAttribute('data-parent-id');
+                const form = document.querySelector(`.reply-form[data-parent-id='${parentId}']`);
+                if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            });
+        });
+
+        document.querySelectorAll('.replyForm').forEach(form => {
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const content = formData.get('content');
+                const postId = formData.get('postId');
+                const parentCommentId = formData.get('parentCommentId');
+                const response = await fetch('@Url.Action("AddComment")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    },
+                    body: `postId=${postId}&content=${encodeURIComponent(content)}&parentCommentId=${parentCommentId}&__RequestVerificationToken=${document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''}`
+                });
+                const result = await response.json();
+                if (result.success) { location.reload(); } else { alert(result.message); }
+            });
         });
 
         document.querySelectorAll('.delete-comment').forEach(button => {
             button.addEventListener('click', async function() {
                 if (confirm('Are you sure you want to delete this comment?')) {
                     const commentId = this.getAttribute('data-comment-id');
-                    
                     const response = await fetch('@Url.Action("DeleteComment")', {
                         method: 'POST',
                         headers: {
@@ -132,14 +178,8 @@
                         },
                         body: `id=${commentId}&__RequestVerificationToken=${document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''}`
                     });
-                    
                     const result = await response.json();
-                    
-                    if (result.success) {
-                        location.reload();
-                    } else {
-                        alert(result.message);
-                    }
+                    if (result.success) { location.reload(); } else { alert(result.message); }
                 }
             });
         });

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace MiniBloggingPlatform.Presentation.Models;
 
@@ -12,5 +13,11 @@ public class CreatePostViewModel
     [Required]
     [Display(Name = "Content")]
     public string Content { get; set; } = string.Empty;
+
+    [Display(Name = "Tags (comma-separated)")]
+    public string Tags { get; set; } = string.Empty;
+
+    [Display(Name = "Image")]
+    public IFormFile? Image { get; set; }
 }
 

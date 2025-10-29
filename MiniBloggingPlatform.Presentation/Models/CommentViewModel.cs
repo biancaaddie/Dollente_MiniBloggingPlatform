@@ -15,5 +15,7 @@ public class CommentViewModel
     public int PostId { get; set; }
     public string AuthorId { get; set; } = string.Empty;
     public string AuthorName { get; set; } = string.Empty;
+
+    public List<CommentViewModel> Replies { get; set; } = new();
 }
 
