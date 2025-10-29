@@ -34,6 +34,7 @@ builder.Services.AddScoped<IPasswordValidator<ApplicationUser>, CustomPasswordVa
 builder.Services.AddScoped<IPostService, PostService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

@@ -107,6 +107,23 @@
                                     <button type="submit" class="btn btn-sm btn-primary">Reply</button>
                                 </form>
                             </div>
+
+                            @if (comment.Replies != null && comment.Replies.Any())
+                            {
+                                <div class="mt-2 ps-3 border-start">
+                                    @foreach (var reply in comment.Replies)
+                                    {
+                                        <div class="card mb-2" data-comment-id="@reply.Id">
+                                            <div class="card-body py-2">
+                                                <p class="card-text">@reply.Content</p>
+                                                <small class="text-muted">
+                                                    By <strong><a class="text-decoration-none" asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@reply.AuthorId">@reply.AuthorName</a></strong> on @reply.CreatedAt.ToString("MMM dd, yyyy 'at' HH:mm")
+                                                </small>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
                         </div>
                     </div>
                 }

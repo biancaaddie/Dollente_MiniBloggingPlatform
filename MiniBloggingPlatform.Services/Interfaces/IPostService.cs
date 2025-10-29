@@ -12,7 +12,7 @@ public interface IPostService
     Task DeletePostAsync(int id);
     Task<bool> PostExistsAsync(int id);
 
-    Task<(IEnumerable<Post> items, int totalCount)> GetPagedPostsAsync(string? search, int page, int pageSize);
+    Task<(IEnumerable<Post> items, int totalCount)> GetPagedPostsAsync(string? search, int page, int pageSize, string sort = "date_desc", string? tag = null);
     Task<IEnumerable<string>> GetAllTagNamesAsync();
 }
 

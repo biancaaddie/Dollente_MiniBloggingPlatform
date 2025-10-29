@@ -33,6 +33,12 @@
                     <ul class="navbar-nav">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
+                            <li class="nav-item me-2">
+                                <a class="nav-link position-relative" asp-controller="Notifications" asp-action="Index" title="Notifications">
+                                    <span aria-hidden="true">🔔</span>
+                                    <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;">0</span>
+                                </a>
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Profile" asp-action="ViewProfile" asp-route-id="@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value">Profile</a>
                             </li>
@@ -70,6 +76,22 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        async function loadNotifCount(){
+            try{
+                const res = await fetch('/notifications/count');
+                if(!res.ok) return;
+                const data = await res.json();
+                const b = document.getElementById('notifBadge');
+                if(!b) return;
+                if(data.count > 0){ b.textContent = data.count; b.style.display='inline-block'; } else { b.style.display='none'; }
+            }catch{}
+        }
+        if (@(User.Identity?.IsAuthenticated == true ? "true" : "false")){
+            loadNotifCount();
+            setInterval(loadNotifCount, 15000);
+        }
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

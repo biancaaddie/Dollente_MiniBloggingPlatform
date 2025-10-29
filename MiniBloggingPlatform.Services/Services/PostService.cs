@@ -87,7 +87,7 @@ public class PostService : IPostService
         return await _context.Posts.AnyAsync(p => p.Id == id);
     }
 
-    public async Task<(IEnumerable<Post> items, int totalCount)> GetPagedPostsAsync(string? search, int page, int pageSize)
+    public async Task<(IEnumerable<Post> items, int totalCount)> GetPagedPostsAsync(string? search, int page, int pageSize, string sort = "date_desc", string? tag = null)
     {
         var query = _context.Posts
             .Include(p => p.Author)
@@ -101,10 +101,22 @@ public class PostService : IPostService
             query = query.Where(p => p.Title.Contains(term) || p.Content.Contains(term) || p.PostTags.Any(pt => pt.Tag!.Name.Contains(term)));
         }
 
+        if (!string.IsNullOrWhiteSpace(tag))
+        {
+            query = query.Where(p => p.PostTags.Any(pt => pt.Tag!.Name == tag));
+        }
+
+        query = sort switch
+        {
+            "date_asc" => query.OrderBy(p => p.CreatedAt),
+            "author" => query.OrderBy(p => p.Author!.FirstName).ThenBy(p => p.Author!.LastName),
+            "popularity" => query.OrderByDescending(p => p.Comments.Count),
+            _ => query.OrderByDescending(p => p.CreatedAt)
+        };
+
         var total = await query.CountAsync();
 
         var items = await query
-            .OrderByDescending(p => p.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -144,7 +156,6 @@ public class PostService : IPostService
             existingTags.AddRange(toCreate);
         }
 
-        // remove old links
         var existingLinks = await _context.PostTags.Where(pt => pt.PostId == post.Id).ToListAsync();
         if (existingLinks.Count > 0)
         {
