@@ -9,5 +9,6 @@ public interface ICommentService
     Task<Comment> CreateCommentAsync(Comment comment);
     Task UpdateCommentAsync(Comment comment);
     Task DeleteCommentAsync(int id);
+    Task<Comment> ReplyToCommentAsync(int parentCommentId, Comment reply);
 }
 

@@ -18,7 +18,9 @@ public class CommentService : ICommentService
     {
         return await _context.Comments
             .Include(c => c.Author)
-            .Where(c => c.PostId == postId)
+            .Include(c => c.Replies)
+                .ThenInclude(r => r.Author)
+            .Where(c => c.PostId == postId && c.ParentCommentId == null)
             .OrderBy(c => c.CreatedAt)
             .ToListAsync();
     }
@@ -57,6 +59,14 @@ public class CommentService : ICommentService
             _context.Comments.Remove(comment);
             await _context.SaveChangesAsync();
         }
+    }
+
+    public async Task<Comment> ReplyToCommentAsync(int parentCommentId, Comment reply)
+    {
+        reply.ParentCommentId = parentCommentId;
+        _context.Comments.Add(reply);
+        await _context.SaveChangesAsync();
+        return reply;
     }
 }
 
