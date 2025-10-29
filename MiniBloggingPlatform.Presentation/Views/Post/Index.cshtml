@@ -1,0 +1,66 @@
+@model IEnumerable<PostViewModel>
+
+@{
+    ViewData["Title"] = "All Posts";
+}
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>All Posts</h2>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a asp-action="Create" class="btn btn-primary">Create New Post</a>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            <h4>No posts yet!</h4>
+            <p>Be the first to create a post.</p>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a asp-action="Create" class="btn btn-primary btn-sm">Create Post</a>
+            }
+            else
+            {
+                <p>Please <a asp-controller="Account" asp-action="Login">login</a> or <a asp-controller="Account" asp-action="Register">register</a> to create posts.</p>
+            }
+        </div>
+    }
+    else
+    {
+        @foreach (var post in Model)
+        {
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a asp-action="Details" asp-route-id="@post.Id" class="text-decoration-none">@post.Title</a>
+                    </h5>
+                    <p class="card-text">
+                        @if (post.Content.Length > 150)
+                        {
+                            @post.Content.Substring(0, 150)
+                            <text>...</text>
+                        }
+                        else
+                        {
+                            @post.Content
+                        }
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            By <strong>@post.AuthorName</strong> on @post.CreatedAt.ToString("MMM dd, yyyy HH:mm")
+                            @if (post.UpdatedAt.HasValue)
+                            {
+                                <span class="text-muted">(Updated: @post.UpdatedAt.Value.ToString("MMM dd, yyyy HH:mm"))</span>
+                            }
+                        </small>
+                        <span class="badge bg-secondary">@post.CommentCount Comments</span>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
