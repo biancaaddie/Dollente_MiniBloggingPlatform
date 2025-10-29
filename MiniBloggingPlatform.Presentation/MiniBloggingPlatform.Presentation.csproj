@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MiniBloggingPlatform.Services\MiniBloggingPlatform.Services.csproj" />
+    <ProjectReference Include="..\MiniBloggingPlatform.Infrastructure\MiniBloggingPlatform.Infrastructure.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -9,5 +10,10 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0" />
+  </ItemGroup>
 
 </Project>
