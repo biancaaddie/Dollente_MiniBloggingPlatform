@@ -14,20 +14,22 @@ public class PostController : Controller
     private readonly ICommentService _commentService;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IWebHostEnvironment _env;
+    private readonly INotificationService _notificationService;
 
-    public PostController(IPostService postService, ICommentService commentService, UserManager<ApplicationUser> userManager, IWebHostEnvironment env)
+    public PostController(IPostService postService, ICommentService commentService, UserManager<ApplicationUser> userManager, IWebHostEnvironment env, INotificationService notificationService)
     {
         _postService = postService;
         _commentService = commentService;
         _userManager = userManager;
         _env = env;
+        _notificationService = notificationService;
     }
 
     [AllowAnonymous]
     [HttpGet]
-    public async Task<IActionResult> Index(string? search, int page = 1, int pageSize = 5)
+    public async Task<IActionResult> Index(string? search, int page = 1, int pageSize = 5, string sort = "date_desc", string? tag = null)
     {
-        var (items, totalCount) = await _postService.GetPagedPostsAsync(search, page, pageSize);
+        var (items, totalCount) = await _postService.GetPagedPostsAsync(search, page, pageSize, sort, tag);
 
         var postsViewModels = items.Select(p => new PostViewModel
         {
@@ -44,13 +46,15 @@ public class PostController : Controller
         var model = new PostsIndexViewModel
         {
             Search = search ?? string.Empty,
+            Sort = sort,
+            Tag = tag,
+            AllTags = await _postService.GetAllTagNamesAsync(),
             Page = page,
             PageSize = pageSize,
             TotalCount = totalCount,
             Posts = postsViewModels
         };
 
-        ViewBag.AllTags = await _postService.GetAllTagNamesAsync();
         return View(model);
     }
 
@@ -125,16 +129,22 @@ public class PostController : Controller
             CommentCount = post.Comments?.Count ?? 0
         };
 
-        var comments = post.Comments?.Where(c => c.ParentCommentId == null).Select(c => new CommentViewModel
+        var threaded = await _commentService.GetCommentsByPostIdAsync(id);
+        CommentViewModel MapComment(MiniBloggingPlatform.Infrastructure.Models.Comment c)
         {
-            Id = c.Id,
-            Content = c.Content,
-            CreatedAt = c.CreatedAt,
-            UpdatedAt = c.UpdatedAt,
-            PostId = c.PostId,
-            AuthorId = c.AuthorId,
-            AuthorName = $"{c.Author?.FirstName} {c.Author?.LastName}".Trim()
-        }).ToList() ?? new List<CommentViewModel>();
+            return new CommentViewModel
+            {
+                Id = c.Id,
+                Content = c.Content,
+                CreatedAt = c.CreatedAt,
+                UpdatedAt = c.UpdatedAt,
+                PostId = c.PostId,
+                AuthorId = c.AuthorId,
+                AuthorName = $"{c.Author?.FirstName} {c.Author?.LastName}".Trim(),
+                Replies = c.Replies?.OrderBy(r => r.CreatedAt).Select(MapComment).ToList() ?? new List<CommentViewModel>()
+            };
+        }
+        var comments = threaded.Select(MapComment).ToList();
 
         ViewBag.Post = postViewModel;
         ViewBag.Comments = comments;
@@ -277,6 +287,18 @@ public class PostController : Controller
         else
         {
             await _commentService.CreateCommentAsync(comment);
+        }
+
+        // Create notification to post author (not self)
+        if (post.AuthorId != user.Id)
+        {
+            await _notificationService.CreateAsync(new Notification
+            {
+                UserId = post.AuthorId,
+                PostId = post.Id,
+                Message = $"{user.FirstName} {user.LastName} commented on your post '{post.Title}'.",
+                CreatedAt = DateTime.UtcNow
+            });
         }
 
         return Json(new { success = true, message = "Comment added successfully." });
